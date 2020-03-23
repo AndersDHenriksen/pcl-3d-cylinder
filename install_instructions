@@ -1,0 +1,11 @@
+conda create -n pcl Python=3.6
+conda activate pcl
+# maybe this is also needed: conda config --add channels conda-forge
+conda install -c sirokujira python-pcl
+# Maybe this is also needed: sudo apt-get install libboost-all-dev
+cd ~/miniconda3/envs/pcl/lib/
+# Below are from: https://github.com/strawlab/python-pcl/issues/285
+ln -s libboost_system.so.1.64.0 libboost_system.so.1.54.0
+ln -s libboost_filesystem.so.1.64.0 libboost_filesystem.so.1.54.0
+ln -s libboost_thread.so.1.64.0 libboost_thread.so.1.54.0
+ln -s libboost_iostreams.so.1.64.0 libboost_iostreams.so.1.54.0
