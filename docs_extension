@@ -1,0 +1,35 @@
+Pointcloud has the following fields: X Y Z
+
+Normals PointCloud has the following fields: normal_x normal_y normal_z curvature
+
+SACMODEL_NORMAL_PLANE is made of:
+a : the X coordinate of the plane's normal (normalized)
+b : the Y coordinate of the plane's normal (normalized)
+c : the Z coordinate of the plane's normal (normalized)
+d : the fourth Hessian component of the plane's equation
+
+
+
+
+Common PointCloud2 field names
+Because field names are generic in the new PointCloud2 message, here's the list of commonly used names within PCL:
+x - the X Cartesian coordinate of a point (float32)
+y - the Y Cartesian coordinate of a point (float32)
+z - the Z Cartesian coordinate of a point (float32)
+rgb - the RGB (24-bit packed) color at a point (uint32)
+rgba - the A-RGB (32-bit packed) color at a point (uint32), the field name is unfortunately misleading
+normal_x - the first component of the normal direction vector at a point (float32)
+normal_y - the second component of the normal direction vector at a point (float32)
+normal_z - the third component of the normal direction vector at a point (float32)
+curvature - the surface curvature change estimate at a point (float32)
+j1 - the first moment invariant at a point (float32)
+j2 - the second moment invariant at a point (float32)
+j3 - the third moment invariant at a point (float32)
+boundary_point - the boundary property of a point (e.g., set to 1 if the point is lying on a boundary) (bool)
+principal_curvature_x - the first component of the direction of the principal curvature at a point (float32)
+principal_curvature_y - the second component of the direction of the principal curvature at a point (float32)
+principal_curvature_z - the third component of the direction of the principal curvature at a point (float32)
+pc1 - the magnitude of the first component of the principal curvature at a point (float32)
+pc2 - the magnitude of the second component of the principal curvature at a point (float32)
+pfh - the Point Feature Histogram (PFH) feature signature at a point (float32[])
+fpfh - the Fast Point Feature Histogram (FPFH) feature signature at a point (float32[])
