@@ -15,7 +15,7 @@ radial_map = cv2.imread(radial_map_file_path)[:, :, 0]
 for hole_mask in vt.cc_masks(radial_map == 0)[0]:
     if hole_mask.sum() > 100:
         print("Large hole in radial map. Something is wrong")
-    perimeter = vt.bw_edge(vt.morph("dilate", hole_mask, (3, 3)))
+    perimeter = vt.morph("dilate", hole_mask, (3, 3)) > hole_mask
     radial_map[hole_mask] = radial_map[perimeter].mean()
 
 # Inpaint alternative
@@ -24,6 +24,7 @@ for hole_mask in vt.cc_masks(radial_map == 0)[0]:
 # Calculate volume
 real_radial_map = intensity_to_radius(radial_map)
 cylinder_volume = np.mean(real_radial_map ** 2) * np.pi * radial_map.shape[0]
+print(f"Cylinder volume: {cylinder_volume:.0f} mm^3")
 
 # Calculate Wrinkles
 indent_mask = vt.morph("blackhat", radial_map, (15, 1)) > intensity_per_mm / 4
@@ -36,9 +37,10 @@ wrinkles_mask = vt.morph("close", wrinkles_mask, (15, 1))
 if np.any(wrinkles_mask[:, 0] * wrinkles_mask[:, -1]):
     warp_marker = 0 * wrinkles_mask
     warp_marker[:, 0] = True
-    wrinkles_mask_reduced = vt.bw_reconstruct(warp_marker, wrinkles_mask)
-    wrinkles_mask[wrinkles_mask_reduced] = False
-    wrinkles_mask2 = np.hstack((wrinkles_mask, wrinkles_mask_reduced))
+    wrinkles_mask_part_2 = vt.bw_reconstruct(warp_marker, wrinkles_mask)
+    wrinkles_mask_part_1 = wrinkles_mask.copy()
+    wrinkles_mask_part_1[wrinkles_mask_part_2] = False
+    wrinkles_mask2 = np.hstack((wrinkles_mask_part_1, wrinkles_mask_part_2))
     radial_map2 = np.hstack((radial_map, radial_map))
 else:
     wrinkles_mask2 = wrinkles_mask
@@ -62,6 +64,7 @@ for wrinkle_mask in vt.cc_masks(wrinkles_mask2)[0]:
 # Calculate cylindricity
 radial_vector = real_radial_map[~wrinkles_mask]
 cylindricity = np.percentile(radial_vector, 95) - np.percentile(radial_vector, 5)
-
+print(f"Cylindricity: {cylindricity:.1f} mm")
 
 vt.showimg(radial_map, overlay_mask=wrinkles_mask)
+cv2.waitKey(0)
