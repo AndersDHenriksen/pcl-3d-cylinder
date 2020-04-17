@@ -63,7 +63,7 @@ for wrinkle_mask in vt.cc_masks(wrinkles_mask2)[0]:
 
 # Calculate cylindricity
 radial_vector = real_radial_map[~wrinkles_mask]
-cylindricity = np.percentile(radial_vector, 95) - np.percentile(radial_vector, 5)
+cylindricity = np.percentile(radial_vector, 95) - np.percentile(radial_vector, 5)  # Would be faster with np.bincount
 print(f"Cylindricity: {cylindricity:.1f} mm")
 
 vt.showimg(radial_map, overlay_mask=wrinkles_mask)
