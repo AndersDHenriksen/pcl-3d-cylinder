@@ -67,4 +67,3 @@ cylindricity = np.percentile(radial_vector, 95) - np.percentile(radial_vector, 5
 print(f"Cylindricity: {cylindricity:.1f} mm")
 
 vt.showimg(radial_map, overlay_mask=wrinkles_mask)
-cv2.waitKey(0)
