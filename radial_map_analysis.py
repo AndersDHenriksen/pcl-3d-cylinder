@@ -9,6 +9,8 @@ import Vision.VisionTools as vt
 # img = io.imread(r"data.tiff")
 # np.save(r"img.npy", img)
 
+pixelsize_in_mm = 1
+
 radial_map_float = np.load(r"C:\Projects\Umicore_CylinderAnalysis\radius_image.npy")
 radial_map_holes = radial_map_float == 0
 nonzero_radii = radial_map_float[~radial_map_holes]
@@ -18,16 +20,7 @@ float_to_uint8 = lambda i: np.uint8(255 * np.clip(i - radial_lower, a_min=0, a_m
 uint8_to_float = lambda i: i / 255 * radial_range + radial_lower
 radial_map = float_to_uint8(radial_map_float)
 
-
-# radial_map_file_path = r"C:\Projects\Umicore_CylinderAnalysis\radius_image_r_119_pp_4.bmp"
-pixelsize_in_mm = 1
-#radial_mean = 164
-#radial_range = 16
-
-
-# intensity_to_radius = lambda i: radial_mean + radial_range * (i/255 - .5)
 intensity_per_mm = 256 / radial_range
-# radial_map = cv2.imread(radial_map_file_path)[:, :, 0]
 
 # Fix holes
 radial_map_closed = vt.morph("close", radial_map, (3, 3))
