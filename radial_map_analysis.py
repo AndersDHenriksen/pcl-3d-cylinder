@@ -2,16 +2,36 @@ import numpy as np
 import cv2
 import Vision.VisionTools as vt
 
-radial_map_file_path = r"C:\Projects\Umicore_CylinderAnalysis\radius_image_r_119_pp_4.bmp"
-pixelsize_in_mm = 1
-radial_mean = 119
-radial_range = 4
+# Convert tiff to npy
+# conda activate playground
+# import numpy as np
+# from scikit import io
+# img = io.imread(r"data.tiff")
+# np.save(r"img.npy", img)
 
-intensity_to_radius = lambda i: radial_mean + radial_range * (i/255 - .5)
+radial_map_float = np.load(r"C:\Projects\Umicore_CylinderAnalysis\radius_image.npy")
+radial_map_holes = radial_map_float == 0
+nonzero_radii = radial_map_float[~radial_map_holes]
+radial_lower = nonzero_radii.min()
+radial_range = nonzero_radii.ptp()
+float_to_uint8 = lambda i: np.uint8(255 * np.clip(i - radial_lower, a_min=0, a_max=radial_range) / radial_range)
+uint8_to_float = lambda i: i / 255 * radial_range + radial_lower
+radial_map = float_to_uint8(radial_map_float)
+
+
+# radial_map_file_path = r"C:\Projects\Umicore_CylinderAnalysis\radius_image_r_119_pp_4.bmp"
+pixelsize_in_mm = 1
+#radial_mean = 164
+#radial_range = 16
+
+
+# intensity_to_radius = lambda i: radial_mean + radial_range * (i/255 - .5)
 intensity_per_mm = 256 / radial_range
-radial_map = cv2.imread(radial_map_file_path)[:, :, 0]
+# radial_map = cv2.imread(radial_map_file_path)[:, :, 0]
 
 # Fix holes
+radial_map_closed = vt.morph("close", radial_map, (3, 3))
+radial_map[radial_map_holes] = radial_map_closed[radial_map_holes]
 for hole_mask in vt.cc_masks(radial_map == 0)[0]:
     if hole_mask.sum() > 100:
         print("Large hole in radial map. Something is wrong")
@@ -22,12 +42,12 @@ for hole_mask in vt.cc_masks(radial_map == 0)[0]:
 # radial_map = cv2.inpaint(radial_map_raw, (radial_map_raw == 0).astype(np.uint8), 3, cv2.INPAINT_TELEA)
 
 # Calculate volume
-real_radial_map = intensity_to_radius(radial_map)
+real_radial_map = uint8_to_float(radial_map) #intensity_to_radius(radial_map)
 cylinder_volume = np.mean(real_radial_map ** 2) * np.pi * radial_map.shape[0]
 print(f"Cylinder volume: {cylinder_volume:.0f} mm^3")
 
 # Calculate Wrinkles
-indent_mask = vt.morph("blackhat", radial_map, (15, 1)) > intensity_per_mm / 4
+indent_mask = vt.morph("blackhat", radial_map, (15, 1)) > intensity_per_mm
 # indent_mask = vt.bw_area_filter(indent_mask, n=500, area_range=(5, 1e6), output="mask")
 indents_closed = vt.morph("close", indent_mask, (3, 15))
 wrinkles_mask = vt.bw_area_filter(indents_closed, n=50, area_range=(20, 1e6), output="mask")
@@ -51,7 +71,7 @@ for wrinkle_mask in vt.cc_masks(wrinkles_mask2)[0]:
     wrinkle_radius = radial_map2[wrinkle_mask].mean()
     perimeter_radius = radial_map2[perimeter_mask].mean()
     wrinkle_depth = perimeter_radius - wrinkle_radius
-    if wrinkle_depth < 0:
+    if wrinkle_depth < intensity_per_mm/2:
         continue
     wrinkle_mask_reduced = vt.bw_remove_empty_lines(wrinkle_mask)
     wrinkle_length = max(wrinkle_mask_reduced.shape)
@@ -60,6 +80,13 @@ for wrinkle_mask in vt.cc_masks(wrinkles_mask2)[0]:
     print(f"wrinkle (length, width, depth): {wrinkle_length:.0f}, {wrinkle_width:.0f}, {wrinkle_depth:.0f} px")
     # vt.showimg(radial_map2, wrinkle_mask)
     # _ = 'bp'
+
+# Calculate diameters
+diameter_A = np.median(real_radial_map[0, :])
+diameter_B = np.median(real_radial_map[-1, :])
+diameters_X = 7 * [None]
+for i, h in enumerate(np.arange(100, min(701, real_radial_map.shape[0]), 100)):
+    diameters_X[i] = np.median(real_radial_map[h, :])
 
 # Calculate cylindricity
 radial_vector = real_radial_map[~wrinkles_mask]
