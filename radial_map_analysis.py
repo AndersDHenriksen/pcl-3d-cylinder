@@ -5,13 +5,13 @@ import Vision.VisionTools as vt
 # Convert tiff to npy
 # conda activate playground
 # import numpy as np
-# from scikit import io
+# from skimage import io
 # img = io.imread(r"data.tiff")
 # np.save(r"img.npy", img)
 
 pixelsize_in_mm = 1
 
-radial_map_float = np.load(r"C:\Projects\Umicore_CylinderAnalysis\radius_image.npy")
+radial_map_float = np.load(r"C:\Projects\Umicore_CylinderAnalysis\radius_image4.npy")
 radial_map_holes = radial_map_float == 0
 nonzero_radii = radial_map_float[~radial_map_holes]
 radial_lower = nonzero_radii.min()
@@ -40,7 +40,8 @@ cylinder_volume = np.mean(real_radial_map ** 2) * np.pi * radial_map.shape[0]
 print(f"Cylinder volume: {cylinder_volume:.0f} mm^3")
 
 # Calculate Wrinkles
-indent_mask = vt.morph("blackhat", radial_map, (15, 1)) > intensity_per_mm
+indent_mask = vt.morph("blackhat", radial_map, (15, 1)) > intensity_per_mm / 2
+indent_mask = vt.morph("open", indent_mask, (1, 3))
 # indent_mask = vt.bw_area_filter(indent_mask, n=500, area_range=(5, 1e6), output="mask")
 indents_closed = vt.morph("close", indent_mask, (3, 15))
 wrinkles_mask = vt.bw_area_filter(indents_closed, n=50, area_range=(20, 1e6), output="mask")
@@ -64,7 +65,7 @@ for wrinkle_mask in vt.cc_masks(wrinkles_mask2)[0]:
     wrinkle_radius = radial_map2[wrinkle_mask].mean()
     perimeter_radius = radial_map2[perimeter_mask].mean()
     wrinkle_depth = perimeter_radius - wrinkle_radius
-    if wrinkle_depth < intensity_per_mm/2:
+    if wrinkle_depth < intensity_per_mm / 2:
         continue
     wrinkle_mask_reduced = vt.bw_remove_empty_lines(wrinkle_mask)
     wrinkle_length = max(wrinkle_mask_reduced.shape)
@@ -87,3 +88,4 @@ cylindricity = np.percentile(radial_vector, 95) - np.percentile(radial_vector, 5
 print(f"Cylindricity: {cylindricity:.1f} mm")
 
 vt.showimg(radial_map, overlay_mask=wrinkles_mask)
+_ = 'bp'
