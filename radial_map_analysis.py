@@ -1,6 +1,10 @@
 import numpy as np
 import cv2
 import Vision.VisionTools as vt
+try:
+    from skimage import io
+except ImportError:
+    print("Scikit image not available")
 
 # Convert tiff to npy
 # conda activate playground
@@ -11,25 +15,26 @@ import Vision.VisionTools as vt
 
 pixelsize_in_mm = 1
 
-radial_map_float = np.load(r"C:\Projects\Umicore_CylinderAnalysis\radius_image4.npy")
+radial_map_float = io.imread("radius_image.tiff")
+
+# Fix holes
 radial_map_holes = radial_map_float == 0
-nonzero_radii = radial_map_float[~radial_map_holes]
-radial_lower = nonzero_radii.min()
-radial_range = nonzero_radii.ptp()
-float_to_uint8 = lambda i: np.uint8(255 * np.clip(i - radial_lower, a_min=0, a_max=radial_range) / radial_range)
+radial_map_closed = vt.morph("close", radial_map_float, (3, 3))
+radial_map_float[radial_map_holes] = radial_map_closed[radial_map_holes]
+for hole_mask in vt.cc_masks(radial_map_float == 0)[0]:
+    if hole_mask.sum() > 100:
+        print("Large hole in radial map. Something is wrong")
+    perimeter = vt.morph("dilate", hole_mask, (3, 3)) > hole_mask
+    radial_map_float[hole_mask] = radial_map_float[perimeter].mean()
+
+# Create uint8 image
+radial_lower = radial_map_float.min()
+radial_range = radial_map_float.ptp()
+float_to_uint8 = lambda i: np.uint8(np.round(255 * np.clip(i - radial_lower, a_min=0, a_max=radial_range) / radial_range))
 uint8_to_float = lambda i: i / 255 * radial_range + radial_lower
 radial_map = float_to_uint8(radial_map_float)
 
 intensity_per_mm = 256 / radial_range
-
-# Fix holes
-radial_map_closed = vt.morph("close", radial_map, (3, 3))
-radial_map[radial_map_holes] = radial_map_closed[radial_map_holes]
-for hole_mask in vt.cc_masks(radial_map == 0)[0]:
-    if hole_mask.sum() > 100:
-        print("Large hole in radial map. Something is wrong")
-    perimeter = vt.morph("dilate", hole_mask, (3, 3)) > hole_mask
-    radial_map[hole_mask] = radial_map[perimeter].mean()
 
 # Inpaint alternative
 # radial_map = cv2.inpaint(radial_map_raw, (radial_map_raw == 0).astype(np.uint8), 3, cv2.INPAINT_TELEA)
@@ -65,13 +70,14 @@ for wrinkle_mask in vt.cc_masks(wrinkles_mask2)[0]:
     wrinkle_radius = radial_map2[wrinkle_mask].mean()
     perimeter_radius = radial_map2[perimeter_mask].mean()
     wrinkle_depth = perimeter_radius - wrinkle_radius
-    if wrinkle_depth < intensity_per_mm / 2:
-        continue
     wrinkle_mask_reduced = vt.bw_remove_empty_lines(wrinkle_mask)
+    if wrinkle_depth < intensity_per_mm / 2 or wrinkle_mask_reduced.shape[0] < 40 / pixelsize_in_mm:
+        wrinkles_mask2[wrinkles_mask] = 0
+        continue
     wrinkle_length = max(wrinkle_mask_reduced.shape)
     wrinkle_width = wrinkle_mask_reduced.sum() / wrinkle_length
     wringle_length_width_depth_mm = (wrinkle_length * pixelsize_in_mm, wrinkle_width * pixelsize_in_mm, wrinkle_depth / intensity_per_mm)
-    print(f"wrinkle (length, width, depth): {wrinkle_length:.0f}, {wrinkle_width:.0f}, {wrinkle_depth:.0f} px")
+    print(f"Wrinkle (length, width, depth): {wrinkle_length:.0f}, {wrinkle_width:.0f}, {wrinkle_depth:.0f} px")
     # vt.showimg(radial_map2, wrinkle_mask)
     # _ = 'bp'
 
@@ -86,6 +92,11 @@ for i, h in enumerate(np.arange(100, min(701, real_radial_map.shape[0]), 100)):
 radial_vector = real_radial_map[~wrinkles_mask]
 cylindricity = np.percentile(radial_vector, 95) - np.percentile(radial_vector, 5)  # Would be faster with np.bincount
 print(f"Cylindricity: {cylindricity:.1f} mm")
+
+if wrinkles_mask2.shape[1] > wrinkles_mask.shape[1]:
+    wrinkles_mask = wrinkles_mask2[:, :wrinkles_mask.shape[1]] | wrinkles_mask2[:, wrinkles_mask.shape[1]:]
+else:
+    wrinkles_mask = wrinkles_mask2
 
 vt.showimg(radial_map, overlay_mask=wrinkles_mask)
 _ = 'bp'
