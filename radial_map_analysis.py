@@ -40,8 +40,7 @@ intensity_per_mm = 256 / radial_range
 # radial_map = cv2.inpaint(radial_map_raw, (radial_map_raw == 0).astype(np.uint8), 3, cv2.INPAINT_TELEA)
 
 # Calculate volume
-real_radial_map = uint8_to_float(radial_map) #intensity_to_radius(radial_map)
-cylinder_volume = np.mean(real_radial_map ** 2) * np.pi * radial_map.shape[0]
+cylinder_volume = np.mean(radial_map_float ** 2) * np.pi * radial_map.shape[0]
 print(f"Cylinder volume: {cylinder_volume:.0f} mm^3")
 
 # Calculate Wrinkles
@@ -82,14 +81,14 @@ for wrinkle_mask in vt.cc_masks(wrinkles_mask2)[0]:
     # _ = 'bp'
 
 # Calculate diameters
-diameter_A = np.median(real_radial_map[0, :])
-diameter_B = np.median(real_radial_map[-1, :])
+diameter_A = np.median(radial_map_float[0, :])
+diameter_B = np.median(radial_map_float[-1, :])
 diameters_X = 7 * [None]
-for i, h in enumerate(np.arange(100, min(701, real_radial_map.shape[0]), 100)):
-    diameters_X[i] = np.median(real_radial_map[h, :])
+for i, h in enumerate(np.arange(100, min(701, radial_map_float.shape[0]), 100)):
+    diameters_X[i] = np.median(radial_map_float[h, :])
 
 # Calculate cylindricity
-radial_vector = real_radial_map[~wrinkles_mask]
+radial_vector = radial_map_float[~wrinkles_mask]
 cylindricity = np.percentile(radial_vector, 95) - np.percentile(radial_vector, 5)  # Would be faster with np.bincount
 print(f"Cylindricity: {cylindricity:.1f} mm")
 
