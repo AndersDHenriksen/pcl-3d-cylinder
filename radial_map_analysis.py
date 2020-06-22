@@ -63,7 +63,7 @@ def analyze_radial_image(radial_map_float):
         wrinkle_depth = perimeter_radius - wrinkle_radius
         wrinkle_mask_reduced = vt.bw_remove_empty_lines(wrinkle_mask)
         if wrinkle_depth < intensity_per_mm / 2 or wrinkle_mask_reduced.shape[0] < 40 / pixelsize_in_mm:
-            wrinkles_mask2[wrinkles_mask] = 0
+            wrinkles_mask2[wrinkle_mask] = 0
             continue
         wrinkle_length = max(wrinkle_mask_reduced.shape)
         wrinkle_width = wrinkle_mask_reduced.sum() / wrinkle_length
