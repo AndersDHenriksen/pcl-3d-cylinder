@@ -9,6 +9,9 @@ except ImportError:
 pixelsize_in_mm = 1
 
 def analyze_radial_image(radial_map_float):
+    # Fix empty line
+    if radial_map_float[:, -1].sum() < 10:
+        radial_map_float[:, -1] = radial_map_float[:, -2]
     # Fix holes
     radial_map_holes = radial_map_float == 0
     radial_map_closed = vt.morph("close", radial_map_float, (3, 3))
@@ -36,10 +39,10 @@ def analyze_radial_image(radial_map_float):
     print(f"Cylinder volume: {cylinder_volume:.0f} mm^3")
 
     # Calculate Wrinkles
-    indent_mask = vt.morph("blackhat", radial_map, (15, 1)) > intensity_per_mm / 2
-    indent_mask = vt.morph("open", indent_mask, (1, 3))
+    indent_mask = vt.morph("blackhat", radial_map, (15, 5)) > intensity_per_mm / 2
+    indent_mask = vt.morph("open", indent_mask, (3, 3))
     # indent_mask = vt.bw_area_filter(indent_mask, n=500, area_range=(5, 1e6), output="mask")
-    indents_closed = vt.morph("close", indent_mask, (3, 15))
+    indents_closed = vt.morph("close", indent_mask, (3, 3))
     wrinkles_mask = vt.bw_area_filter(indents_closed, n=50, area_range=(20, 1e6), output="mask")
     wrinkles_mask = vt.morph("close", wrinkles_mask, (15, 1))
 
@@ -89,11 +92,8 @@ def analyze_radial_image(radial_map_float):
     else:
         wrinkles_mask = wrinkles_mask2
 
-    # vt.showimg(radial_map, overlay_mask=wrinkles_mask)
+    vt.showimg(radial_map, overlay_mask=wrinkles_mask)
     _ = 'bp'
 
 if __name__ == "__main__":
-    analyze_radial_image(io.imread(R"C:\Users\ahe\Desktop\radius_image_1full.tiff"))
-    analyze_radial_image(io.imread(R"C:\Users\ahe\Desktop\radius_image_2full.tiff"))
-    analyze_radial_image(io.imread(R"C:\Users\ahe\Desktop\radius_image_3full.tiff"))
-    analyze_radial_image(io.imread(R"C:\Users\ahe\Desktop\radius_image_4full.tiff"))
+    analyze_radial_image(io.imread(r"E:\radius_image.tiff"))
