@@ -25,6 +25,23 @@ print(f"Top perp is: {perp(normal, cyl_axis, diameter):.2f} mm")
 print(f"Top CutSt is: {perp(normal, cyl_axis, height):.2f} mm")
 _ = 'bp'
 
+# New attempt use scan after rotation - working!
+top, side = 6 * [None], 6 * [None]
+for i in range(6):
+    top[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BadPerp\cloud_top_{i}.ply").voxel_down_sample(1)
+    side[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BadPerp\cloud_side_{i}.ply").voxel_down_sample(1)
+top_normals = 4 * [None]
+for i, cloud_t in enumerate(top[:4]):
+    top_normals[i] = plane_fitting(cloud_t, diameter)
+normal = normalize(np.array(top_normals).mean(axis=0))
+
+cyl_axis0 = cylinder_fitting(side[0] + side[1] + side[2] + side[3], height)
+cyl_axis1 = cylinder_fitting(side[4] + side[5], height)
+cyl_axis = normalize(cyl_axis0 + [-cyl_axis1[0], cyl_axis1[1], cyl_axis1[2]])
+print(f"Top perp is: {perp(normal, cyl_axis, diameter):.2f} mm")
+print(f"Top CutSt is: {perp(normal, cyl_axis, height):.2f} mm")
+
+
 # New attempt align with icp because of tops - Works better but not sure why - Also seems incorrect to do as top and side is not aligned perfectly
 combined = [top[i] + side[i] for i in range(4)]
 total_cloud = icp_multiple(combined[0], combined[1:])
@@ -35,15 +52,15 @@ cylinder_axis = cylinder_fitting(total_cloud, height, True)
 perp(top_normal, cylinder_axis, diameter)
 
 # New attempt - Use side for everything - Same result even though circle traced by top normal is different
-# top_normals = 4 * [None]
-# for i, cloud_t in enumerate(side):
-#     top_normals[i] = plane_fitting(cloud_t, diameter)
-# normal = normalize(np.array(top_normals).mean(axis=0))
-#
-# cyl_axis = cylinder_fitting(side[0] + side[1] + side[2] + side[3], height)
-#
-# print(f"Top perp is: {perp(normal, cyl_axis, diameter):.2f} mm")
-# print(f"Top CutSt is: {perp(normal, cyl_axis, height):.2f} mm")
+top_normals = 4 * [None]
+for i, cloud_t in enumerate(side):
+    top_normals[i] = plane_fitting(cloud_t, diameter)
+normal = normalize(np.array(top_normals).mean(axis=0))
+
+cyl_axis = cylinder_fitting(side[0] + side[1] + side[2] + side[3], height)
+
+print(f"Top perp is: {perp(normal, cyl_axis, diameter):.2f} mm")
+print(f"Top CutSt is: {perp(normal, cyl_axis, height):.2f} mm")
 
 # New attempt fit 4 cylinders - Same result
 single_normal, single_axis = 4 * [None], 4 * [None]
