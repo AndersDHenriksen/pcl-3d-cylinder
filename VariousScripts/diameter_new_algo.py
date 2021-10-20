@@ -9,11 +9,11 @@ from Open3d_CylinderFitting import cylinder_fitting
 
 CloudS, CloudT = 6*[None],6*[None]
 for i in range(6):
-    CloudS[i] = o3d.io.read_point_cloud(rf"D:\cloud_side_{i}.ply").voxel_down_sample(1)
-    CloudT[i] = o3d.io.read_point_cloud(rf"D:\cloud_top_{i}.ply").voxel_down_sample(1)
+    CloudS[i] = o3d.io.read_point_cloud(rf"C:\Projects\Umicore_SW\inspection_sw\out\build\RelWithDebInfo\cloud_side_{i}.ply").voxel_down_sample(1)
+    CloudT[i] = o3d.io.read_point_cloud(rf"C:\Projects\Umicore_SW\inspection_sw\out\build\RelWithDebInfo\cloud_top_{i}.ply").voxel_down_sample(1)
 
-CloudT.append(o3d.io.read_point_cloud(rf"E:\TOP.ply").voxel_down_sample(1))
-CloudT.append(o3d.io.read_point_cloud(rf"E:\top_22.ply").voxel_down_sample(1))
+# CloudT.append(o3d.io.read_point_cloud(rf"E:\TOP.ply").voxel_down_sample(1))
+# CloudT.append(o3d.io.read_point_cloud(rf"E:\top_22.ply").voxel_down_sample(1))
 
 # CloudS_combined = CloudS[0] + CloudS[1] + CloudS[2] + CloudS[3] + CloudS[4] + CloudS[5]
 # CloudS_combined = cloud_to_nparray(CloudS_combined)
@@ -36,3 +36,5 @@ for t in range(6):
         local_radius = np.linalg.norm(cloud_cent[angle_idx, :2], axis=1).max()
         radii.append(local_radius)
     print(np.array(radii).mean() * 2)
+
+_ = 'bp'

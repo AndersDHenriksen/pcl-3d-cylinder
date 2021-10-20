@@ -76,8 +76,8 @@ def analyze_radial_image(radial_map_float):
         # _ = 'bp'
 
     # Calculate diameters
-    diameter_A = np.median(radial_map_float[0, :])
-    diameter_B = np.median(radial_map_float[-1, :])
+    diameter_A = np.median(radial_map_float[10, :])
+    diameter_B = np.median(radial_map_float[-10, :])
     diameters_X = 7 * [None]
     for i, h in enumerate(np.arange(100, min(701, radial_map_float.shape[0]), 100)):
         diameters_X[i] = np.median(radial_map_float[h, :])
@@ -93,7 +93,8 @@ def analyze_radial_image(radial_map_float):
         wrinkles_mask = wrinkles_mask2
 
     vt.showimg(radial_map, overlay_mask=wrinkles_mask)
+    vt.showimg(np.median(radial_map_float, axis=1))
     _ = 'bp'
 
 if __name__ == "__main__":
-    analyze_radial_image(io.imread(r"E:\radius_image.tiff"))
+    analyze_radial_image(io.imread(r"C:\Projects\Umicore_SW\inspection_sw\out\build\RelWithDebInfo\radius_image_top.tiff"))

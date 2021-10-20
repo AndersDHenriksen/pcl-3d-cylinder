@@ -6,13 +6,13 @@ import os
 from open3d_helper import perp, cloud_to_nparray, nparray_to_cloud, visualize_cloud, icp_multiple, vectors_to_transfor, \
     get_rotation_matrix, normalize, get_normals, plane_fitting, cylinder_fitting, draw_registration_result, transform_cloud
 
-diameter = 330
-height = 76
+diameter = 200
+height = 70
 
 top, side = 4 * [None], 4 * [None]
 for i in range(4):
-    top[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BadPerp\cloud_top_{i}.ply").voxel_down_sample(1)
-    side[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BadPerp\cloud_side_{i}.ply").voxel_down_sample(1)
+    top[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BlackRefCyl\cloud_top_{i}.ply").voxel_down_sample(1)
+    side[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BlackRefCyl\cloud_side_{i}.ply").voxel_down_sample(1)
 
 top_normals = 4 * [None]
 for i, cloud_t in enumerate(top):
@@ -25,32 +25,6 @@ print(f"Top perp is: {perp(normal, cyl_axis, diameter):.2f} mm")
 print(f"Top CutSt is: {perp(normal, cyl_axis, height):.2f} mm")
 _ = 'bp'
 
-# New attempt use scan after rotation - working if just x component flipped!
-top, side = 6 * [None], 6 * [None]
-for i in range(6):
-    top[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BadPerp\cloud_top_{i}.ply").voxel_down_sample(1)
-    side[i] = o3d.io.read_point_cloud(rf"D:\Data\2802. Umicore\BadPerp\cloud_side_{i}.ply").voxel_down_sample(1)
-top_normals = 4 * [None]
-for i, cloud_t in enumerate(top[:4]):
-    top_normals[i] = plane_fitting(cloud_t, diameter)
-normal = normalize(np.array(top_normals).mean(axis=0))
-
-cyl_axis0 = cylinder_fitting(side[0] + side[1] + side[2] + side[3], height)
-cyl_axis1 = cylinder_fitting(side[4] + side[5], height)
-theta = np.deg2rad(14.75-270)
-flip = lambda v: [np.cos(2*theta) * v[0] + np.sin(2*theta) * v[1], np.sin(2*theta) * v[0] - np.cos(2*theta) * v[1], -v[2]]
-cyl_axis = normalize(cyl_axis0 + flip(-cyl_axis1))
-print(f"Top perp is: {perp(normal, cyl_axis, diameter):.2f} mm")
-
-
-# New attempt align with icp because of tops - Works better but not sure why - Also seems incorrect to do as top and side is not aligned perfectly
-combined = [top[i] + side[i] for i in range(4)]
-total_cloud = icp_multiple(combined[0], combined[1:])
-# total_cloud = icp_multiple(side[0], side[1:])  # Not working
-# total_cloud = combined[0] + combined[1] + combined[2] + combined[3]  # Not working
-top_normal = plane_fitting(total_cloud, diameter, True)
-cylinder_axis = cylinder_fitting(total_cloud, height, True)
-perp(top_normal, cylinder_axis, diameter)
 
 # New attempt - Use side for everything - Same result even though circle traced by top normal is different
 top_normals = 4 * [None]
